@@ -16,7 +16,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
             // register objective heuristics
             {
                 bot.movement.heuristic.register('proximity', 'gold')
-                    .weight(0.25)
+                    .weight(0.5)
 
                 bot.movement.heuristic.register('proximity', 'murderer')
                     .weight(0)
@@ -26,26 +26,27 @@ module.exports.inject = function inject(bot, SwitchMode) {
             // register terrain navigation heuristics
             {
                 bot.movement.heuristic.register('distance', 'long_distance')
-                    .weight(0.6)
-                    .radius(15)
+                    .weight(0.55)
+                    .radius(12)
                     .count(5)
                     .spread(25)
                     .offset(1)
 
                 bot.movement.heuristic.register('distance', 'short_distance')
-                    .weight(0.2)
-                    .radius(4)
+                    .weight(0.8)
+                    .radius(3)
                     .count(3)
-                    .spread(20)
+                    .spread(30)
+                    .offset(1)
 
                 bot.movement.heuristic.register('danger')
-                    .weight(0.4)
+                    .weight(0.65)
                     .radius(3)
                     .depth(1)
                     .count(6)
 
                 bot.movement.heuristic.register('conformity')
-                    .weight(0.5)
+                    .weight(0.4)
             }
 
             bot.setControlState("forward", true)
@@ -84,7 +85,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
                                 return false
                             if (state.isInLava)
                                 return false
-                            if (state.isCollidedVertically) {
+                            if (state.onGround) {
                                 valid = true
                                 return true
                             }
@@ -96,9 +97,10 @@ module.exports.inject = function inject(bot, SwitchMode) {
                         .ticks(15)
                         .trajectory()
 
+                    // only apply jump if we are ascending a block
                     if (valid && trajectory.length > 0) {
                         const offset = trajectory[trajectory.length - 1].y - bot.entity.position.y
-                        if (offset > 0) {
+                        if (offset > 0.5) {
                             bot.setControlState("jump", true)
                         }
                     }
@@ -123,7 +125,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
             } else
 
             if (message.match(/^YOU DIED!/)) {
-                this.stop()
+                this.stop() // wait until the game's over
             }
 
             console.log(chatMsg.toAnsi())
