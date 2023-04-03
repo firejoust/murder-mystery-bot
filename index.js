@@ -22,6 +22,7 @@ bot.loadPlugin(Physics)
 bot.loadPlugin(Pathfinder)
 
 bot.once("spawn", () => Viewer(bot, { port: 3000, firstPerson: true }))
+bot.once("error", bot.end)
 
 {
     let CurrentMode = {

@@ -15,16 +15,17 @@ module.exports.inject = function inject(bot, SwitchMode) {
             bot.off("message", this.message)
         }
 
-        async spawn() {
+        spawn = async() => {
             // click murder mystery in the game menu
             Assert.ok(
                 await new bot.gui.Query()
                     .matchBy("display")
+                    .packet(true)
                     .clickItems("Game Menu", "Murder Mystery")
             , "Unable to use game selector")
     
             // allow time for the world to load
-            await new Promise(resolve => setTimeout(resolve, 5 * 1000))
+            await new Promise(resolve => setTimeout(resolve, 8 * 1000))
 
             // find the lobby NPC's hologram
             const hologram = new bot.hologram.Query()
@@ -66,6 +67,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
                     await new bot.gui.Query()
                         .window(window)
                         .matchBy("display")
+                        .packet(true)
                         .clickItems("Murder Mystery (Classic)")
                 , "Unable to use lobby NPC menu")
             }
@@ -84,11 +86,11 @@ module.exports.inject = function inject(bot, SwitchMode) {
                 )
             }
 
-            // Wait for the game to start
+            // Wait for the game to start (120 seconds)
             {
                 const timeout = setTimeout(function timeout() {
                     throw new Error("Unable to start the game")
-                }, 60 * 1000)
+                }, 120 * 1000)
 
                 const role = await new Promise(resolve => {
                     const callback = function(json) {
@@ -127,7 +129,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
             }
         }
 
-        message(chatMsg) {
+        message = (chatMsg) => {
             console.log(chatMsg.toAnsi())
         }
     }

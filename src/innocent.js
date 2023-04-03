@@ -16,7 +16,7 @@ module.exports.inject = function inject(bot, SwitchMode) {
             // register objective heuristics
             {
                 bot.movement.heuristic.register('proximity', 'gold')
-                    .weight(0.5)
+                    .weight(1)
 
                 bot.movement.heuristic.register('proximity', 'murderer')
                     .weight(0)
@@ -26,42 +26,77 @@ module.exports.inject = function inject(bot, SwitchMode) {
             // register terrain navigation heuristics
             {
                 bot.movement.heuristic.register('distance', 'long_distance')
-                    .weight(0.55)
-                    .radius(12)
+                    .weight(0.5)
+                    .radius(20)
                     .count(5)
                     .spread(25)
+                    .increment(0.5)
                     .offset(1)
 
                 bot.movement.heuristic.register('distance', 'short_distance')
-                    .weight(0.8)
-                    .radius(3)
+                    .weight(0.45)
+                    .radius(4)
                     .count(3)
                     .spread(30)
                     .offset(1)
 
-                bot.movement.heuristic.register('danger')
+                bot.movement.heuristic.register('danger', 'descent')
+                    .weight(0.35)
+                    .radius(6)
+                    .depth(5)
+                    .count(12)
+                    .descend(true)
+
+                bot.movement.heuristic.register('danger', 'holes')
                     .weight(0.65)
                     .radius(3)
-                    .depth(1)
+                    .depth(2)
                     .count(6)
 
                 bot.movement.heuristic.register('conformity')
-                    .weight(0.4)
+                    .weight(0.3)
             }
+
+            // randomise periods where the player will stop
+            this.timeout = null
+            this.wait = false
+            this.waitTicks = 0
 
             bot.setControlState("forward", true)
         }
 
         stop() {
             bot.off("physicsTick", this.tick)
-            bot.setControlState("forward", false)
-            bot.setControlState("jump", false)
+            bot.clearControlStates()
+            clearTimeout(this.timeout)
         }
 
         tick = () => {
-            bot.setControlState("jump", false)
+            bot.clearControlStates()
 
-            // search for the nearest gold ingot
+            // randomise "stopping" periods where movement is ceased
+            {
+                // verify no timeouts are currently pending
+                if (!this.wait) {
+                    const duration = (15 * 1000) + (Math.floor(10 * Math.random()) * 1000)
+                    const ticks = 20 + Math.floor(Math.random() * 40)
+                    this.wait = true
+
+                    // set a duration from now where the player will stop moving
+                    this.timeout = setTimeout(() => {
+                        this.waitTicks = ticks
+                        this.wait = false
+                    }, duration)
+                }
+
+                // ticks applied by timeout; freeze movement until it has reached 0
+                if (this.waitTicks > 0) {
+                    this.waitTicks--
+                    return
+                }
+            }
+
+            // if gold is nearby, change the heuristic
             {
                 const entity = bot.nearestEntity(entity => 
                     entity.mobType === "Dropped item" &&
@@ -72,8 +107,8 @@ module.exports.inject = function inject(bot, SwitchMode) {
                     .target(entity?.position || null)
             }
 
+            // determine if a jump can be made
             if (bot.entity.onGround) {
-                // determine if a jump can be made
                 {
                     let valid = false
 
@@ -105,10 +140,20 @@ module.exports.inject = function inject(bot, SwitchMode) {
                         }
                     }
                 }
-
-                const yaw = bot.movement.getYaw(240, 25, 3)
-                bot.movement.steer(yaw)
             }
+
+            // only chnage direction on the ground or in water
+            if (bot.entity.onGround || bot.entity.isInWater) {
+                const yaw = bot.movement.getYaw(220, 25, 3)
+                bot.movement.steer(yaw, false)
+            }
+
+            // stay above the surface of water
+            if (bot.entity.isInWater) {
+                bot.setControlState("jump", true)
+            }
+
+            bot.setControlState("forward", true)
         }
 
         message = (chatMsg) => {
@@ -120,6 +165,11 @@ module.exports.inject = function inject(bot, SwitchMode) {
             } else
 
             if (message.match(/^\s+Winner:/)) {
+                bot.chat('/hub')
+                SwitchMode('lobby')
+            } else
+
+            if (message.match(/^You were spawned in Limbo/)) {
                 bot.chat('/hub')
                 SwitchMode('lobby')
             } else
