@@ -1,16 +1,18 @@
 Test bot to see how close we can get to top hypixel leaderboards
 
 ### Objectives
-- Improving my mineflayer plugins with a real use case scenario
-- Experiment with gameplay behaviour that fools other players
-- Getting to the top leaderboards and taking the piss lol
+- Taking the piss
+- Testing my plugins
+- All the above
 
 ### Features
-- Automatically joins new games with hologram API and mineflayer-GUI
-- Quits when the game is finished using message regex matching
-- Wanders around aimlessly using advanced movement algorithm
-- Collects gold
+- Automatically joins new games with hologram + GUI 
+- Requeues games automatically
+- Wanders around aimlessly
+- Collects gold if nearby
 
 ### Roadmap
-- Identify the murderer and avoid them using proximity heuristic
+- Use pathfinding
+- Avoidance goals
+- Identify the murderer
 - Play as the murderer and detective
